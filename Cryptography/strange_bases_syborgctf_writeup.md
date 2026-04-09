@@ -1,9 +1,9 @@
 # Strange Bases — SyborgCTF Writeup
 
-**Challenge:** Strange Bases
-**Category:** Cryptography
-**Difficulty:** Easy
-**Points:** 50 pts
+**Challenge:** Strange Bases  
+**Category:** Cryptography  
+**Difficulty:** Easy  
+**Points:** 50 pts  
 **Flag:** `syborg_ctf{less_common_90s_base}`
 
 ---
