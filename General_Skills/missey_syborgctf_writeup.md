@@ -1,10 +1,10 @@
 # Missey — SyborgCTF Writeup
 
-**Challenge:** Missey    
-**Category:** General Skills    
-**Difficulty:** Very Hard    
-**Points:** 300 pts    
-**Flag:** `syborg_ctf{M15SED_INBY7$}`    
+**Challenge:** Missey  
+**Category:** General Skills  
+**Difficulty:** Very Hard  
+**Points:** 300 pts  
+**Flag:** `syborg_ctf{M15SED_INBY7$}`
 
 ---
 
@@ -12,264 +12,352 @@
 
 > Seems someone tried to bruteforce on IPs, so can you reveal what he hides?
 
-We're given a `.pcap` file. Someone is "brute-forcing" IP addresses — but something is secretly hidden inside the traffic.
+We are given a `.pcap` file. The traffic looks like a port scanner brute-forcing IPs, but a hidden message is secretly encoded inside the destination IP addresses.
 
 ---
 
-## Background Knowledge (Read This First!)
-
-Before solving, you need to understand two things:
+## What You Need to Know First
 
 ### What is a PCAP file?
-A `.pcap` file is a **recording of network traffic** — like a security camera but for internet packets. Tools like Wireshark can open and read them.
+
+A `.pcap` file is a **recording of network traffic** — like a video replay of every packet sent and received. Wireshark can open and read it.
 
 ### What is an IP address?
-An IP address looks like this: `192.126.117.112`
 
-It has **4 parts** separated by dots. The last part (`112`) is called the **last octet**.
-- Minimum value: `0`
-- Maximum value: `255`
-- ASCII characters also use values `0–255` — so a last octet **CAN represent a letter!**
+An IP address looks like: `192.126.117.112`
 
-### The Trick in This Challenge
+It has **4 parts** separated by dots. The last part is called the **last octet**. In this case, the last octet is `112`.
 
-The attacker disguised a secret message by sending packets to IPs where the **last octet = ASCII value of a character**. For example:
+- IP octets range from `0` to `255`
+- ASCII characters also use values `0` to `127` (and beyond)
+- So a last octet **can represent a letter or symbol** — for example, octet `65` = the letter `A`
 
-| Destination IP | Last Octet | ASCII Value | Character |
-|----------------|-----------|-------------|-----------|
-| `192.126.117.70` | 70 | 70 | **F** |
-| `192.126.117.76` | 76 | 76 | **L** |
-| `192.126.117.65` | 65 | 65 | **A** |
-| `192.126.117.71` | 71 | 71 | **G** |
+### The Hidden Message Trick
 
-Read them in order → **FLAG**! 🎯
+The attacker sent packets to a series of destination IPs where the **last octet equals the ASCII value of a character**. Example:
 
----
+| Destination IP | Last Octet | ASCII Character |
+|---|---|---|
+| `192.126.117.70` | 70 | `F` |
+| `192.126.117.76` | 76 | `L` |
+| `192.126.117.65` | 65 | `A` |
+| `192.126.117.71` | 71 | `G` |
 
-## ⚠️ Important: Why "First Occurrence Only" Matters
+Reading those in order → `FLAG`
 
-Each IP was contacted **many times** to fake a brute-force. If you read ALL packets:
-```
-pppppPPPPPQQQQQvvvvv3333...
-```
-Each character repeated hundreds of times — garbage!
+### Why "First Occurrence Only"?
 
-But if you only take the **first time** each IP appears, you get each character exactly **once**, in the correct order:
-```
-pPQv3XRWzu2KZOUjJV8w4CcHorxh6qk09|FLAG{M15SED_INBY7$}
-```
+Each IP was contacted **hundreds of times** to fake a real brute-force scan. If you read all packets, every character repeats hundreds of times — useless noise.
 
-**The order of first contact tells the story. Duplicates are just camouflage noise.** ✅
+The trick: take only the **first time each unique IP appears**, in the order they appear. That gives you each character exactly **once**, in the correct sequence.
 
 ---
 
-## Solution — Method 1: Wireshark + CyberChef ✅ Easiest (No Coding)
+## Solution — Method 1: Wireshark + CyberChef (No Coding, Recommended)
 
-### Step 1: Open the file in Wireshark
+### Step 1 — Open the PCAP in Wireshark
 
-Download Wireshark free at 👉 https://www.wireshark.org/
+Open Wireshark on Kali. Drag `Missey.pcap` into it, or go to **File → Open**.
 
-Open `Missey.pcap` by dragging it into Wireshark. You'll see thousands of packets — don't panic!
+You will see thousands of packets. Do not panic.
 
-### Step 2: Filter the suspicious traffic
+### Step 2 — Filter to Show Only the Suspicious Traffic
 
-In the **filter bar** at the top, type this and press Enter:
+At the top of Wireshark, there is a green filter bar. Click it and type this filter exactly, then press **Enter**:
 
 ```
 ip.dst == 192.126.117.0/24
 ```
 
-This shows **only packets going to the `192.126.117.x` subnet** — the brute-force traffic.
+This hides everything except packets going to the `192.126.117.x` range — the subnet the attacker was targeting. The bar turns green when the filter is valid. You should now see only those packets.
 
-> 💡 `/24` means "match any IP starting with `192.126.117.`"
+> **What does `/24` mean?** It means "match any IP that starts with `192.126.117.`" — it is a subnet mask shorthand.
 
-### Step 3: Go to Statistics → Endpoints
+### Step 3 — Extract the Unique IPs in First-Seen Order
 
-1. Click the **Statistics** menu at the top
-2. Click **Endpoints**
-3. Click the **IPv4** tab
-4. Sort by **first seen** order
+Now you need to find the destination IPs **in the order they first appeared**. Here is the most reliable way:
 
-You'll see all unique destination IPs:
+Go to **Statistics → Endpoints** in the menu bar.
+
+Click the **IPv4** tab. You will see a list of all unique destination IPs like:
+
 ```
-192.126.117.112
-192.126.117.80
-192.126.117.81
-192.126.117.118
+192.126.117.36
+192.126.117.48
+192.126.117.49
+192.126.117.50
 ...
+192.126.117.125
 ```
 
-### Step 4: Extract the last octets in order
+> **Important:** The Endpoints list is sorted alphabetically by default, NOT by first-seen order. This is fine for getting the full list of IPs, but to get them in the right ORDER, use the tshark method in Step 3b, OR use the Python script method below.
 
-Write down the last number of each IP **in the order they first appeared**:
+#### Step 3b — Getting the Correct Order (the reliable way)
+
+The easiest way to get the correct order is to use **tshark** in the terminal. Open a terminal and run:
+
 ```
-112, 80, 81, 118, 51, 88, 82, 87, 122, 117, 50, 75 ... 70, 76, 65, 71, 123, 77, 49, 53, 83, 69, 68, 95, 73, 78, 66, 89, 55, 36, 125
+tshark -r Missey.pcap -Y "ip.dst == 192.126.117.0/24" -T fields -e ip.dst | awk -F. '!seen[$0]++ {print $4}'
 ```
 
-### Step 5: Convert to ASCII using CyberChef
+This prints the last octet of each unique destination IP, in the exact order they first appeared in the capture. You will see a list like:
 
-1. Go to 👉 https://gchq.github.io/CyberChef/
-2. Search **From Charcode** → drag it into the Recipe
-3. Set **Delimiter** to `Comma`
-4. Paste the numbers into the Input box
-5. Click **BAKE!**
+```
+112
+80
+81
+118
+51
+88
+82
+87
+122
+117
+50
+75
+...
+70
+76
+65
+71
+123
+77
+49
+53
+83
+69
+68
+95
+73
+78
+66
+89
+55
+36
+125
+```
+
+**This is where those numbers come from.** Each number is the last octet of a destination IP. Each octet = one ASCII character.
+
+### Step 4 — Convert the Numbers to Text with CyberChef
+
+1. Go to [https://gchq.github.io/CyberChef/](https://gchq.github.io/CyberChef/)
+2. In the Operations search box on the left, type `from char` and find **From Charcode**
+3. Drag **From Charcode** into the Recipe box in the middle
+4. Set **Delimiter** to `Comma`
+5. Set **Base** to `10`
+6. In the Input box on the right, paste the numbers **separated by commas** like this:
+
+```
+112, 80, 81, 118, 51, 88, 82, 87, 122, 117, 50, 75, 90, 79, 85, 106, 74, 86, 56, 119, 52, 67, 99, 72, 111, 114, 120, 104, 54, 113, 107, 48, 57, 124, 70, 76, 65, 71, 123, 77, 49, 53, 83, 69, 68, 95, 73, 78, 66, 89, 55, 36, 125
+```
+
+7. Click **BAKE!**
 
 Output:
+
 ```
 pPQv3XRWzu2KZOUjJV8w4CcHorxh6qk09|FLAG{M15SED_INBY7$}
 ```
 
-The flag content is: **`M15SED_INBY7$`** 🎉
+The flag is at the end: `FLAG{M15SED_INBY7$}`, so the full flag is `syborg_ctf{M15SED_INBY7$}`.
 
 ---
 
-## Solution — Method 2: Python Script 🐍 Recommended for Speed
+### Why Base 10, NOT Base 16?
 
-### Step 1: Install Scapy
+This is a very common mistake. Here is why it must be Base 10:
 
-```bash
-pip install scapy
+IP address octets are written in **decimal** (base 10). The number `112` in an IP address literally means one hundred and twelve — it is already a decimal number.
+
+- In base 10: `112` → ASCII character `p` ✅
+- In base 16: `112` → the tool reads it as hex `0x112` = `274` → no valid ASCII character ❌
+
+So always use **Base 10** when your input numbers came from IP address octets.
+
+---
+
+## Solution — Method 2: Python Script
+
+If you prefer to automate everything in one step, use this script.
+
+### Step 1 — Go to the folder where Missey.pcap is
+
+First find the file if you are not sure where it is:
+
+```
+find / -name "Missey.pcap" 2>/dev/null
 ```
 
-### Step 2: Save this script as `solve.py`
+Then `cd` into that folder. For example:
+
+```
+cd /media/sf_downloads
+```
+
+Confirm the file is there:
+
+```
+ls
+```
+
+You should see `Missey.pcap` in the output.
+
+### Step 2 — Install Scapy
+
+On Kali Linux, the normal `pip install` command will give you an error. Use this instead:
+
+```
+pip install scapy --break-system-packages
+```
+
+> **Why `--break-system-packages`?** Kali protects the system Python from pip installs by default. This flag bypasses that. It is safe to use on a CTF machine.
+
+### Step 3 — Create the script using nano
+
+Go to your **home directory** first. This is important — there is a file called `code.py` inside `/media/sf_downloads/` that conflicts with Python's built-in module and causes Scapy to crash. Running from home avoids that conflict.
+
+```
+cd ~
+```
+
+Now open a new file:
+
+```
+nano solve.py
+```
+
+Your terminal turns into a text editor. Type or paste this code. Notice the **full path** to `Missey.pcap` is written directly in the script so it does not matter which folder you run from:
 
 ```python
 from scapy.all import *
 
-# Load the pcap file
-print("[*] Loading pcap file...")
-pkts = rdpcap('Missey.pcap')
-print(f"[*] Total packets loaded: {len(pkts)}")
+pkts = rdpcap('/media/sf_downloads/Missey.pcap')
 
-# Track IPs we've already seen (first occurrence only!)
 seen_set = set()
 seen_octets = []
 
-# Loop through every packet
 for pkt in pkts:
-    if IP in pkt:                        # Only look at IP packets
-        dst = pkt[IP].dst                # Get destination IP
-
-        if dst.startswith('192.126.117.'):   # Only the brute-force subnet
-
-            if dst not in seen_set:          # Only first occurrence!
+    if IP in pkt:
+        dst = pkt[IP].dst
+        if dst.startswith('192.126.117.'):
+            if dst not in seen_set:
                 seen_set.add(dst)
-
-                last_octet = int(dst.split('.')[-1])   # Get last number
+                last_octet = int(dst.split('.')[-1])
                 seen_octets.append(last_octet)
 
-# Convert all the numbers to characters
 result = ''.join(chr(b) for b in seen_octets)
-
-print(f"\n[*] Decoded message:")
 print(result)
-print(f"\n[*] Flag: syborg_ctf{{{result.split('{')[1].split('}')[0]}}}")
 ```
 
-### Step 3: Run it
+Now save and exit nano:
 
-```bash
+1. Press **Ctrl + O** — saves the file
+2. Press **Enter** — confirms the filename
+3. Press **Ctrl + X** — exits nano
+
+### Step 4 — Run it
+
+Make sure you are still in the home directory (`~`), then run:
+
+```
 python3 solve.py
 ```
 
-### Output:
+Output:
 
 ```
-[*] Loading pcap file...
-[*] Total packets loaded: 12532
-
-[*] Decoded message:
 pPQv3XRWzu2KZOUjJV8w4CcHorxh6qk09|FLAG{M15SED_INBY7$}
-
-[*] Flag: syborg_ctf{M15SED_INBY7$}
 ```
+
+> **Why did it fail before?** There is a file called `code.py` in `/media/sf_downloads/`. Python mistook it for its own built-in `code` module, which Scapy depends on. Running the script from home (`~`) where there is no `code.py` fixes this completely.
 
 ---
 
-## Solution — Method 3: Tshark One-Liner ⚡ Fastest
+## Solution — Method 3: Tshark One-Liner (Fastest)
 
-**Tshark** is the command-line version of Wireshark. One single command does everything.
+One single command does everything — extracts IPs, keeps first occurrences only, and converts to ASCII.
 
-### Install Tshark
+### Step 1 — Go to the folder where Missey.pcap is
 
-```bash
-# Linux
-sudo apt install tshark
+tshark cannot find the file if you are in the wrong folder. First locate it:
 
-# Mac
-brew install wireshark
-
-# Windows — install Wireshark, Tshark comes with it
+```
+find ~ -name "Missey.pcap" 2>/dev/null
 ```
 
-### Run this command
+Then `cd` into that folder. For example, if it is in `/media/sf_downloads`:
 
-```bash
+```
+cd /media/sf_downloads
+```
+
+Confirm the file is there:
+
+```
+ls
+```
+
+You should see `Missey.pcap` in the output.
+
+### Step 2 — Run the command
+
+```
 tshark -r Missey.pcap -Y "ip.dst == 192.126.117.0/24" -T fields -e ip.dst | awk -F. '!seen[$0]++ {printf "%c", $4}'
 ```
 
-**What each part does:**
-
-| Part | Purpose |
-|------|---------|
-| `-r Missey.pcap` | Read the pcap file |
-| `-Y "ip.dst == 192.126.117.0/24"` | Filter to only our subnet |
-| `-T fields -e ip.dst` | Print only destination IP |
-| `awk -F. '!seen[$0]++'` | Keep only first occurrence of each IP |
-| `{printf "%c", $4}` | Print last octet as ASCII character |
-
-### Output:
+Output:
 
 ```
-pPQv3XRWzu2KZOUjJV8w4CcHorxh6qk09|FLAG{M15SED_INBY7$}
+pPQv3XRWzu2KZOUjJV8w4CcHorxh6qk09|FLAG{M15SED_INBY7$}777
 ```
 
-Done in one line! ⚡
+> **Why does `777` appear at the end?** The pcap contains a few extra packets after the closing `}` that also target the same subnet. Octet `55` = ASCII `7`, and it appears as 3 extra unique IPs near the end of the capture. This is just extra noise the attacker left in — it does not affect the flag. The flag ends at `}` and is: `syborg_ctf{M15SED_INBY7$}` ✅
+
+**Breaking down what each part does:**
+
+| Part | What it does |
+|---|---|
+| `tshark -r Missey.pcap` | Open and read the pcap file |
+| `-Y "ip.dst == 192.126.117.0/24"` | Filter to only show our target subnet |
+| `-T fields -e ip.dst` | Print only the destination IP field |
+| `awk -F. '!seen[$0]++'` | Only pass through each unique IP the first time it appears |
+| `{printf "%c", $4}` | Print the 4th field (last octet) as an ASCII character |
 
 ---
 
-## Full Decoding Table (Flag Part Only)
+## Flag Decoding Table (Final Part)
 
-| Destination IP | Last Octet | Character |
-|----------------|-----------|-----------|
-| `192.126.117.70` | 70 | **F** |
-| `192.126.117.76` | 76 | **L** |
-| `192.126.117.65` | 65 | **A** |
-| `192.126.117.71` | 71 | **G** |
-| `192.126.117.123` | 123 | **{** |
-| `192.126.117.77` | 77 | **M** |
-| `192.126.117.49` | 49 | **1** |
-| `192.126.117.53` | 53 | **5** |
-| `192.126.117.83` | 83 | **S** |
-| `192.126.117.69` | 69 | **E** |
-| `192.126.117.68` | 68 | **D** |
-| `192.126.117.95` | 95 | **_** |
-| `192.126.117.73` | 73 | **I** |
-| `192.126.117.78` | 78 | **N** |
-| `192.126.117.66` | 66 | **B** |
-| `192.126.117.89` | 89 | **Y** |
-| `192.126.117.55` | 55 | **7** |
-| `192.126.117.36` | 36 | **$** |
-| `192.126.117.125` | 125 | **}** |
+| Destination IP | Last Octet | ASCII Character |
+|---|---|---|
+| `192.126.117.70` | 70 | `F` |
+| `192.126.117.76` | 76 | `L` |
+| `192.126.117.65` | 65 | `A` |
+| `192.126.117.71` | 71 | `G` |
+| `192.126.117.123` | 123 | `{` |
+| `192.126.117.77` | 77 | `M` |
+| `192.126.117.49` | 49 | `1` |
+| `192.126.117.53` | 53 | `5` |
+| `192.126.117.83` | 83 | `S` |
+| `192.126.117.69` | 69 | `E` |
+| `192.126.117.68` | 68 | `D` |
+| `192.126.117.95` | 95 | `_` |
+| `192.126.117.73` | 73 | `I` |
+| `192.126.117.78` | 78 | `N` |
+| `192.126.117.66` | 66 | `B` |
+| `192.126.117.89` | 89 | `Y` |
+| `192.126.117.55` | 55 | `7` |
+| `192.126.117.36` | 36 | `$` |
+| `192.126.117.125` | 125 | `}` |
 
-Reading all → **`FLAG{M15SED_INBY7$}`** ✅
-
----
-
-## Tools Used
-
-| Tool | Purpose | Level |
-|------|---------|-------|
-| Wireshark + CyberChef | Visual, no coding needed | ⭐ Easiest |
-| Python + Scapy | Automated script | ⭐⭐ Medium |
-| Tshark (command line) | One-liner, fastest | ⭐⭐⭐ Advanced |
+Read together → `FLAG{M15SED_INBY7$}` ✅
 
 ---
 
 ## Key Takeaways
 
-- **PCAP files** record real network traffic — Wireshark reads them
-- Data can be hidden inside **IP address last octets** — a sneaky steganography trick
-- The "brute-force" was fake — it was actually **covert data exfiltration**
-- Always check **what's changing** in repetitive traffic — that's where the secret is
-- **First occurrence order** matters — duplicates are just camouflage noise
+- PCAP files record real network traffic — Wireshark and tshark read them
+- Data can be hidden inside the **last octet of IP addresses** — a steganography technique
+- The fake brute-force was a cover — the real goal was **covert data exfiltration**
+- Only the **first occurrence** of each IP matters — duplicates are just noise
+- IP octets are decimal numbers, so always use **Base 10** in CyberChef when converting them to ASCII
