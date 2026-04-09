@@ -354,6 +354,16 @@ Read together → `FLAG{M15SED_INBY7$}` ✅
 
 ---
 
+## Tools Used
+
+| Tool | Purpose | Difficulty |
+|---|---|---|
+| Wireshark + CyberChef | Visual, no coding needed | ⭐ Easiest |
+| Python + Scapy | Automated script | ⭐⭐ Medium |
+| Tshark (command line) | One-liner, fastest | ⭐⭐⭐ Advanced |
+
+---
+
 ## Key Takeaways
 
 - PCAP files record real network traffic — Wireshark and tshark read them
