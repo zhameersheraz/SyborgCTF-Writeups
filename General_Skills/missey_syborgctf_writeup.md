@@ -97,7 +97,8 @@ Click the **IPv4** tab. You will see a list of all unique destination IPs like:
 The easiest way to get the correct order is to use **tshark** in the terminal. Open a terminal and run:
 
 ```
-tshark -r Missey.pcap -Y "ip.dst == 192.126.117.0/24" -T fields -e ip.dst | awk -F. '!seen[$0]++ {print $4}'
+┌──(zham㉿kali)-[/media/sf_downloads]
+└─$ tshark -r Missey.pcap -Y "ip.dst == 192.126.117.0/24" -T fields -e ip.dst | awk -F. '!seen[$0]++ {print $4}'
 ```
 
 This prints the last octet of each unique destination IP, in the exact order they first appeared in the capture. You will see a list like:
@@ -186,29 +187,32 @@ If you prefer to automate everything in one step, use this script.
 First find the file if you are not sure where it is:
 
 ```
-find / -name "Missey.pcap" 2>/dev/null
+┌──(zham㉿kali)-[~]
+└─$ find / -name "Missey.pcap" 2>/dev/null
 ```
 
-Then `cd` into that folder. For example:
+Then `cd` into that folder:
 
 ```
-cd /media/sf_downloads
+┌──(zham㉿kali)-[~]
+└─$ cd /media/sf_downloads
 ```
 
 Confirm the file is there:
 
 ```
-ls
+┌──(zham㉿kali)-[/media/sf_downloads]
+└─$ ls
+Missey.pcap
 ```
-
-You should see `Missey.pcap` in the output.
 
 ### Step 2 — Install Scapy
 
 On Kali Linux, the normal `pip install` command will give you an error. Use this instead:
 
 ```
-pip install scapy --break-system-packages
+┌──(zham㉿kali)-[/media/sf_downloads]
+└─$ pip install scapy --break-system-packages
 ```
 
 > **Why `--break-system-packages`?** Kali protects the system Python from pip installs by default. This flag bypasses that. It is safe to use on a CTF machine.
@@ -218,13 +222,15 @@ pip install scapy --break-system-packages
 Go to your **home directory** first. This is important — there is a file called `code.py` inside `/media/sf_downloads/` that conflicts with Python's built-in module and causes Scapy to crash. Running from home avoids that conflict.
 
 ```
-cd ~
+┌──(zham㉿kali)-[/media/sf_downloads]
+└─$ cd ~
 ```
 
 Now open a new file:
 
 ```
-nano solve.py
+┌──(zham㉿kali)-[~]
+└─$ nano solve.py
 ```
 
 Your terminal turns into a text editor. Type or paste this code. Notice the **full path** to `Missey.pcap` is written directly in the script so it does not matter which folder you run from:
@@ -261,12 +267,8 @@ Now save and exit nano:
 Make sure you are still in the home directory (`~`), then run:
 
 ```
-python3 solve.py
-```
-
-Output:
-
-```
+┌──(zham㉿kali)-[~]
+└─$ python3 solve.py
 pPQv3XRWzu2KZOUjJV8w4CcHorxh6qk09|FLAG{M15SED_INBY7$}
 ```
 
@@ -283,32 +285,30 @@ One single command does everything — extracts IPs, keeps first occurrences onl
 tshark cannot find the file if you are in the wrong folder. First locate it:
 
 ```
-find ~ -name "Missey.pcap" 2>/dev/null
+┌──(zham㉿kali)-[~]
+└─$ find ~ -name "Missey.pcap" 2>/dev/null
 ```
 
-Then `cd` into that folder. For example, if it is in `/media/sf_downloads`:
+Then `cd` into that folder:
 
 ```
-cd /media/sf_downloads
+┌──(zham㉿kali)-[~]
+└─$ cd /media/sf_downloads
 ```
 
 Confirm the file is there:
 
 ```
-ls
+┌──(zham㉿kali)-[/media/sf_downloads]
+└─$ ls
+Missey.pcap
 ```
-
-You should see `Missey.pcap` in the output.
 
 ### Step 2 — Run the command
 
 ```
-tshark -r Missey.pcap -Y "ip.dst == 192.126.117.0/24" -T fields -e ip.dst | awk -F. '!seen[$0]++ {printf "%c", $4}'
-```
-
-Output:
-
-```
+┌──(zham㉿kali)-[/media/sf_downloads]
+└─$ tshark -r Missey.pcap -Y "ip.dst == 192.126.117.0/24" -T fields -e ip.dst | awk -F. '!seen[$0]++ {printf "%c", $4}'
 pPQv3XRWzu2KZOUjJV8w4CcHorxh6qk09|FLAG{M15SED_INBY7$}777
 ```
 
