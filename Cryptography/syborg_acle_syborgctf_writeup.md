@@ -66,8 +66,9 @@ syborg_ctf{syborg_acle_2026}
 
 ### Step 1 — Create the script
 
-```bash
-nano solve.py
+```
+┌──(zham㉿kali)-[~]
+└─$ nano solve.py
 ```
 
 ### Step 2 — Paste this
@@ -99,13 +100,9 @@ while True:
 - **Ctrl + O** → **Enter** (save)
 - **Ctrl + X** (exit nano)
 
-```bash
-python3 solve.py
 ```
-
-Output:
-
-```
+┌──(zham㉿kali)-[~]
+└─$ python3 solve.py
 FLAG: syborg_ctf{syborg_acle_2026}
 ```
 
