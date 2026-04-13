@@ -71,23 +71,29 @@ print(encrypted_message)
 
 > ⚠️ VirtualBox shared folders don't support symlinks — `python3 -m venv` fails inside `/media/sf_downloads`. Create the venv in `~` instead.
 
-```bash
-cd ~
-python3 -m venv myenv
-source myenv/bin/activate
-pip install pycryptodome
+```
+┌──(zham㉿kali)-[~]
+└─$ python3 -m venv myenv
+                                                                                
+┌──(zham㉿kali)-[~]
+└─$ source myenv/bin/activate
+                                                                                
+┌──(myenv)─(zham㉿kali)-[~]
+└─$ pip install pycryptodome
 ```
 
 ### Step 2 — Go to challenge files
 
-```bash
-cd /media/sf_downloads
+```
+┌──(myenv)─(zham㉿kali)-[~]
+└─$ cd /media/sf_downloads
 ```
 
 ### Step 3 — Create the script
 
-```bash
-nano solve.py
+```
+┌──(myenv)─(zham㉿kali)-[/media/sf_downloads]
+└─$ nano solve.py
 ```
 
 Paste this:
@@ -131,13 +137,9 @@ print(plaintext.decode())
 - **Ctrl + O** → **Enter** (save)
 - **Ctrl + X** (exit nano)
 
-```bash
-python3 solve.py
 ```
-
-Output:
-
-```
+┌──(myenv)─(zham㉿kali)-[/media/sf_downloads]
+└─$ python3 solve.py
 syborg_ctf{3xp0s3d_s33d_1s_n0t_g00d_s33d}
 ```
 
