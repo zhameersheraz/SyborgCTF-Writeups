@@ -48,14 +48,16 @@ The ciphertext decodes to a long horse racing story. The flag `ictf{french_horse
 
 ### Step 1 — Go to challenge files
 
-```bash
-cd /media/sf_downloads
+```
+┌──(zham㉿kali)-[~]
+└─$ cd /media/sf_downloads
 ```
 
 ### Step 2 — Create the script
 
-```bash
-nano solve.py
+```
+┌──(zham㉿kali)-[/media/sf_downloads]
+└─$ nano solve.py
 ```
 
 Paste this:
@@ -134,13 +136,9 @@ if idx >= 0:
 - **Ctrl + O** → **Enter** (save)
 - **Ctrl + X** (exit nano)
 
-```bash
-python3 solve.py
 ```
-
-Output:
-
-```
+┌──(zham㉿kali)-[/media/sf_downloads]
+└─$ python3 solve.py
 ...ictf{french_horses_deserve_more_love_too}...
 
 Flag: ictf{french_horses_deserve_more_love_too}
