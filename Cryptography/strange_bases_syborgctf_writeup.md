@@ -132,3 +132,4 @@ syborg_ctf{less_common_90s_base}
 - **Base64 is not the only encoding** — symbols like `'`, `@`, `^`, `]`, `%` hint at Base92
 - The description is always a clue — "less common 90s base" pointed directly at Base92
 - CyberChef has operations for dozens of encodings — always browse the operations list when stuck
+
