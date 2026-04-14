@@ -131,3 +131,4 @@ School prefix → `syborg_ctf{4dD1ng+m0re_op3raTIon5~1sNT_alwAyS_stR0ngEr}` ✅ 
 - Known-plaintext attacks are powerful — just knowing `ictf{` broke the entire cipher
 - The two chosen bytes must have an **odd** difference mod 256 or the math fails
 - Always assume the attacker knows your flag format prefix!
+
